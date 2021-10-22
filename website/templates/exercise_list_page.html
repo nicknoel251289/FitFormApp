@@ -1,0 +1,13 @@
+{% extends "base.html"%}
+{% block title %}Exercises{% endblock %}
+<div class="card_inner">
+    <span>Squat</span>
+</div>
+{% block content %}
+    <div class="Grid Grid--gutters Grid--cols-4 u-textCenter">
+        <a href="/exercises/squats/back_squat_side" class="Card card_1 Grid-cell"><div class="card_inner"><span>SQUATS</span></div></a>
+        <a href="/exercises/rows/barbell_row_side" class="Card card_1 Grid-cell"><div class="card_inner"><span>ROWS</span></div></a>
+        <a href="#" class="Card card_1 Grid-cell">{% include "cards/card.html" %}</a>
+        <a href="#" class="Card card_1 Grid-cell">{% include "cards/card.html" %}</a>
+    </div>
+{% endblock %}

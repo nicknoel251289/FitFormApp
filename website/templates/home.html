@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+
+{% block title %}FitForm{% endblock %}
+
+{% block content %}
+    <h1>Home</h1>
+    {% if user.is_authenticated %}
+      <h2>Welcome back {{user.first_name}}</h2>
+    {% endif %}
+{% endblock %}

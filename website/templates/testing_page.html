@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block title %}Testing Page{% endblock %}
+
+{% block content %}
+    <h1>Testing Page</h1>
+    {{ text + '"this message appended in testing.html file"' }}
+    <br />
+    {{ username }}
+    <br />
+    {% if boolean == True %}
+        hello
+    {% endif %}
+
+    <br />
+
+    {% if isNick == True %}
+        hi nick
+    {% elif isNick == False %}
+        hi NOT nick
+    {% endif %}
+
+    <!-- 
+        The name field is important; this is the attribute that is used when we pass the information
+        in this field to our backend. When the user submits the form, it bundle the information in the
+        form and use all of the name attributes to represent the data when it gets sent to the back end.
+        So we can access the email address by whatever its name attribute is.
+    -->
+    <form method="post">
+        <h2>Sign Up</h2>
+
+        <!-- EMAIL -->
+        <div class="form-group">
+            <label for="email">Email Address</label>
+            <input 
+                type="email" 
+                class="form-control" 
+                id="email" 
+                name="email" 
+                placeholder="Enter email"
+            >
+        </div>
+
+        <!-- FIRST NAME -->
+        <div class="form-group">
+            <label for="first_name">First Name</label>
+            <input 
+                type="text"
+                class="form-control" 
+                id="first_name" 
+                name="first_name" 
+                placeholder="First Name">
+        </div>
+
+        <!-- PASSWORD 1-->
+        <div class="form-group">
+            <label for="password_1">Password</label>
+            <input 
+                type="password"
+                class="form-control" 
+                id="password_1" 
+                name="password_1" 
+                placeholder="Password">
+        </div>
+
+        <!-- PASSWORD 2-->
+        <div class="form-group">
+            <label for="password_2">Confirm password</label>
+            <input 
+                type="password"
+                class="form-control" 
+                id="password_2" 
+                name="password_2" 
+                placeholder="Confirm password">
+        </div>
+
+        <br />
+
+        <!-- SUBMIT FORM -->
+        <button type="submit" class="btn btn-primary">Submit</button>
+    </form>
+{% endblock %}
