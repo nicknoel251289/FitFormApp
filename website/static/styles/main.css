@@ -11,8 +11,8 @@ h3 {font-size: 1.5em;}
 h4 {font-size: 1.3em;}
 
 body {
-  color: #404040;
-  background: #e2e1e0;
+  color: #ffffff;
+  background: #ffffff;
   font: 100 1em/150% "proxima-nova", Helvetica, sans-serif;
 }
 
@@ -51,4 +51,14 @@ body {
 }
 .card_inner{
   flex: 1;
+}
+
+.cv2_window{
+  width: 100%;
+  display: inline-flex;
+  margin: 0 auto;
+}
+
+.estimate_pose_button{
+  display: inline-block;
 }

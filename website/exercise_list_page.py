@@ -2,6 +2,9 @@
 from flask import Blueprint, render_template
 from flask_login import login_required, current_user
 
+from imutils.video import VideoStream
+import imutils
+
 # 1. Should name the blueprint the same name as the file for ease of use
 exercise_list_page = Blueprint('exercise_list_page', __name__)
 

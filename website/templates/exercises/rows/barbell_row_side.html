@@ -1,6 +1,11 @@
 {% extends "base.html" %}
-{% block title %}Barbell Row - Side View{% endblock %}
+{% block title %}Back Squat - Side View{% endblock %}
 
 {% block content %}
     <h2>Barbell Row - Side View</h2>
+    <div class="cv2_window">
+        <img src="{{ url_for('exercises.video_feed') }}" alt="camera_feed">
+    </div>
+    <button id="record" class="estimate_pose_button">RECORD</button>
+    <button id="submit" class="estimate_pose_button">SUBMIT</button>
 {% endblock %}
