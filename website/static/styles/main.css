@@ -1,5 +1,5 @@
 /* global */
-h1, h2, h3, h4 {  
+h1, h2, h3, h4, h5 {  
   font-weight: 900;
   color: #333;
   margin: 1.5em 0 0.5em;
@@ -11,8 +11,7 @@ h3 {font-size: 1.5em;}
 h4 {font-size: 1.3em;}
 
 body {
-  color: #ffffff;
-  background: #ffffff;
+  background: #dddddd;
   font: 100 1em/150% "proxima-nova", Helvetica, sans-serif;
 }
 
@@ -51,6 +50,10 @@ body {
 }
 .card_inner{
   flex: 1;
+}
+
+.barbell_side_view div {
+  color: black;
 }
 
 .cv2_window{

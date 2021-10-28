@@ -3,9 +3,14 @@
 
 {% block content %}
     <h2>Barbell Row - Side View</h2>
-    <div class="cv2_window">
-        <img src="{{ url_for('exercises.video_feed') }}" alt="camera_feed">
-    </div>
-    <button id="record" class="estimate_pose_button">RECORD</button>
-    <button id="submit" class="estimate_pose_button">SUBMIT</button>
+    <section class="barbell_side_view">
+        <div class="cv2_window">
+            <img src="{{ url_for('exercises.video_feed', exersice_name='barbell_row_side') }}" alt="camera_feed">
+        </div>
+        <form action="/record" method="get">
+            <button name="forwardBtn" type="submit">Record</button>
+        </form>
+        <br />
+        <div>These buttons need to start and stop the feed and when done, record the results to the screen and then to the DB for the user</div>
+    </section>
 {% endblock %}
