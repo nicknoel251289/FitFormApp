@@ -1,5 +1,6 @@
 # 1. This is a blueprint of our application; it has a bunch of routes/URLs defined inside of it.
-from flask import Blueprint, render_template, Response
+from flask import Blueprint, render_template, Response, request
+from flask.helpers import url_for
 from flask_login import login_required, current_user, utils
 
 import cv2
@@ -16,6 +17,10 @@ from threading import Thread
 mp_drawing = mp.solutions.drawing_utils
 # 2. this imports our pose estimation models
 mp_pose = mp.solutions.pose
+
+class set_exercise:
+    current_exercise = None
+    current_angle = None
 
 # 1. Should name the blueprint the same name as the file for ease of use.
 exercises = Blueprint('exercises', __name__)
@@ -76,21 +81,29 @@ class VideoCamera(object):
         success, jpeg = cv2.imencode('.jpg', image)
         return jpeg.tobytes()
 
-def generate_camera(video_camera, exercise):
+def generate_camera(video_camera, current_exercise):
     while True:
-        frame = video_camera.get_frame(exercise)
+        frame = video_camera.get_frame(current_exercise)
         yield(b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
 @exercises.route('/video_feed')
 @login_required
 def video_feed():
-    return Response(generate_camera(VideoCamera(), 'barbell_row_side'), mimetype='multipart/x-mixed-replace; boundary=frame')
+    print(set_exercise.current_exercise)
+    return Response(generate_camera(VideoCamera(), set_exercise.current_exercise), mimetype='multipart/x-mixed-replace; boundary=frame')
+
+@exercises.route('/record', methods=['GET'])
+@login_required
+def record():
+    print("TEST")
+    return Response("test hello bitch this works")
 
 # EXERCISES
 # legs
 @exercises.route('/exercises/squats/back_squat_side')
 @login_required
 def back_squat_side():
+    set_exercise.current_exercise = 'back_squat_side'
     return render_template("/exercises/squats/back_squat_side.html", user=current_user)
     #return render_template("/exercises/squats/back_squat_side.html", user=current_user)
 
@@ -98,10 +111,8 @@ def back_squat_side():
 @exercises.route('/exercises/rows/barbell_row_side')
 @login_required
 def barbell_row_side():
-    return render_template("/exercises/rows/barbell_row_side.html", user=current_user)
-
-
-
+    set_exercise.current_exercise = 'barbell_row_side'
+    return render_template("/exercises/rows/barbell_row_side.html", user=current_user, angle=set_exercise.current_angle)
 
 # get the points on which we want to calculate our angle
 def exercise_to_calc(exercise, landmarks, image):
@@ -110,7 +121,23 @@ def exercise_to_calc(exercise, landmarks, image):
         elbow = [landmarks[mp_pose.PoseLandmark.LEFT_ELBOW.value].x, landmarks[mp_pose.PoseLandmark.LEFT_ELBOW.value].y]
         wrist = [landmarks[mp_pose.PoseLandmark.LEFT_WRIST.value].x, landmarks[mp_pose.PoseLandmark.LEFT_WRIST.value].y]
         angle = calc_angle(shoulder, elbow, wrist)
+        set_exercise.current_angle = angle
+        return elbow, angle
 
+    elif(exercise == 'back_squat_side'):
+        shoulder = [landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER.value].x, landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER.value].y]
+        elbow = [landmarks[mp_pose.PoseLandmark.LEFT_ELBOW.value].x, landmarks[mp_pose.PoseLandmark.LEFT_ELBOW.value].y]
+        wrist = [landmarks[mp_pose.PoseLandmark.LEFT_WRIST.value].x, landmarks[mp_pose.PoseLandmark.LEFT_WRIST.value].y]
+        angle = calc_angle(shoulder, elbow, wrist)
+        set_exercise.current_angle = angle
+        return elbow, angle
+
+    elif(exercise == 'bicep_curl'):
+        shoulder = [landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER.value].x, landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER.value].y]
+        elbow = [landmarks[mp_pose.PoseLandmark.LEFT_ELBOW.value].x, landmarks[mp_pose.PoseLandmark.LEFT_ELBOW.value].y]
+        wrist = [landmarks[mp_pose.PoseLandmark.LEFT_WRIST.value].x, landmarks[mp_pose.PoseLandmark.LEFT_WRIST.value].y]
+        angle = calc_angle(shoulder, elbow, wrist)
+        set_exercise.current_angle = angle
         return elbow, angle
 
 # CALC ANGLE

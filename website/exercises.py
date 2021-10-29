@@ -20,7 +20,11 @@ mp_pose = mp.solutions.pose
 
 class set_exercise:
     current_exercise = None
-    current_angle = None
+    current_angle = 0
+    is_recording = False
+    ROM_completed = None
+    ecentric_completed = False
+    concentric_completed = False
 
 # 1. Should name the blueprint the same name as the file for ease of use.
 exercises = Blueprint('exercises', __name__)
@@ -37,49 +41,66 @@ class VideoCamera(object):
         
         success, frame = self.stream.read()
 
-        # 1. .Pose access our pose estiamtion models
-        # 2. min_detection_confidence is what we want our detection confidence to be
-        # 3. min_tracking_confidence is what we want our tracking confidence to be, when we maintain our state
-        # 4. If we want to be more accurate, increase the metrics to .8 or .95. There is a tradeoff with increasing
-        #    these numbers. It will require a more persize pose from the person which could be more difficult
-        with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as pose:
+        if set_exercise.is_recording:
 
-            # Recolor image to RGB
-            image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            image.flags.writeable = False
+            # 1. .Pose access our pose estiamtion models
+            # 2. min_detection_confidence is what we want our detection confidence to be
+            # 3. min_tracking_confidence is what we want our tracking confidence to be, when we maintain our state
+            # 4. If we want to be more accurate, increase the metrics to .8 or .95. There is a tradeoff with increasing
+            #    these numbers. It will require a more persize pose from the person which could be more difficult
+            with mp_pose.Pose(min_detection_confidence=0.65, min_tracking_confidence=0.65) as pose:
 
-            # make detection
-            results = pose.process(image)
+                # Recolor image to RGB
+                image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                image.flags.writeable = False
 
-            # Recolor back to BGR (BGR NOT RGB)
-            image.flags.writeable = True
-            image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+                # make detection
+                results = pose.process(image)
 
-            # Extract landmarks
-            try:
-                landmarks = results.pose_landmarks.landmark
+                # Recolor back to BGR (BGR NOT RGB)
+                image.flags.writeable = True
+                image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
 
-                # exercise to calculate angle for
-                poi_coord, angle = exercise_to_calc(exercise, landmarks, image)
+                # Extract landmarks
+                try:
+                    landmarks = results.pose_landmarks.landmark
 
-                # vizualize
-                # str(angle) - turn our angle into a string
-                # Tuple(....astype()) The coordinates we get by default are normalized and not adjust for the cameras dimensions.
-                #     This allows us to find the correct coordinates within our cameras dimensions 
-                cv2.putText(image, str(angle), tuple(np.multiply(poi_coord, [640, 480]).astype(int)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2, cv2.LINE_AA)
+                    # exercise to calculate angle for
+                    poi_coord, angle = exercise_to_calc(exercise, landmarks, image)
 
-            except:
-                pass
+                    # vizualize
+                    # str(angle) - turn our angle into a string
+                    # Tuple(....astype()) The coordinates we get by default are normalized and not adjust for the cameras dimensions.
+                    #     This allows us to find the correct coordinates within our cameras dimensions 
+                    cv2.putText(image, str(angle), tuple(np.multiply(poi_coord, [640, 480]).astype(int)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2, cv2.LINE_AA)
 
-            # Render detections
-            mp_drawing.draw_landmarks(image, results.pose_landmarks, mp_pose.POSE_CONNECTIONS,
-                                        mp_drawing.DrawingSpec(color=(245, 117, 66), thickness=2, circle_radius=2),
-                                        mp_drawing.DrawingSpec(color=(245, 66, 230), thickness=2, circle_radius=2)
-                                        )
+                    if angle > 170:
+                        set_exercise.ecentric_completed = True
+                        set_exercise.current_angle = angle
+                        print('Ecentric contraction complete? ' + str(True))
 
 
-        success, jpeg = cv2.imencode('.jpg', image)
-        return jpeg.tobytes()
+                    if angle < 30 and set_exercise.ecentric_completed:
+                        set_exercise.concentric_completed = True
+                        set_exercise.ROM_completed = True
+                        print("ROM completed? - " + str(set_exercise.ROM_completed))
+
+
+                except:
+                    pass
+
+                # Render detections
+                mp_drawing.draw_landmarks(image, results.pose_landmarks, mp_pose.POSE_CONNECTIONS,
+                                            mp_drawing.DrawingSpec(color=(245, 117, 66), thickness=2, circle_radius=2),
+                                            mp_drawing.DrawingSpec(color=(245, 66, 230), thickness=2, circle_radius=2)
+                                            )
+
+                success, jpeg = cv2.imencode('.jpg', image)
+                return jpeg.tobytes()
+ 
+        elif set_exercise.is_recording == False:
+            success, jpeg = cv2.imencode('.jpg', frame)
+            return jpeg.tobytes()
 
 def generate_camera(video_camera, current_exercise):
     while True:
@@ -89,16 +110,31 @@ def generate_camera(video_camera, current_exercise):
 @exercises.route('/video_feed')
 @login_required
 def video_feed():
-    print(set_exercise.current_exercise)
     return Response(generate_camera(VideoCamera(), set_exercise.current_exercise), mimetype='multipart/x-mixed-replace; boundary=frame')
 
+# set recording to true
 @exercises.route('/record', methods=['GET'])
 @login_required
 def record():
-    print("TEST")
-    return Response("test")
+    set_exercise.is_recording = True
+    return Response("record")
+
+# set recording to false
+@exercises.route('/stop', methods=['GET'])
+@login_required
+def stop():
+    set_exercise.is_recording = False
+    print(str(set_exercise.ROM_completed))
+    return Response(str(set_exercise.ROM_completed))
 
 # EXERCISES
+# Back
+@exercises.route('/exercises/rows/barbell_row_side')
+@login_required
+def barbell_row_side():
+    set_exercise.current_exercise = 'barbell_row_side'
+    return render_template("/exercises/rows/barbell_row_side.html", user=current_user)
+
 # legs
 @exercises.route('/exercises/squats/back_squat_side')
 @login_required
@@ -107,16 +143,25 @@ def back_squat_side():
     return render_template("/exercises/squats/back_squat_side.html", user=current_user)
     #return render_template("/exercises/squats/back_squat_side.html", user=current_user)
 
-# Back
-@exercises.route('/exercises/rows/barbell_row_side')
-@login_required
-def barbell_row_side():
-    set_exercise.current_exercise = 'barbell_row_side'
-    return render_template("/exercises/rows/barbell_row_side.html", user=current_user, angle=set_exercise.current_angle)
-
 # get the points on which we want to calculate our angle
 def exercise_to_calc(exercise, landmarks, image):
     if(exercise == 'barbell_row_side'):
+        shoulder = [landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER.value].x, landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER.value].y]
+        elbow = [landmarks[mp_pose.PoseLandmark.LEFT_ELBOW.value].x, landmarks[mp_pose.PoseLandmark.LEFT_ELBOW.value].y]
+        wrist = [landmarks[mp_pose.PoseLandmark.LEFT_WRIST.value].x, landmarks[mp_pose.PoseLandmark.LEFT_WRIST.value].y]
+        angle = calc_angle(shoulder, elbow, wrist)
+        set_exercise.current_angle = angle
+        return elbow, angle
+
+    elif(exercise == 'back_squat_side'):
+        shoulder = [landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER.value].x, landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER.value].y]
+        elbow = [landmarks[mp_pose.PoseLandmark.LEFT_ELBOW.value].x, landmarks[mp_pose.PoseLandmark.LEFT_ELBOW.value].y]
+        wrist = [landmarks[mp_pose.PoseLandmark.LEFT_WRIST.value].x, landmarks[mp_pose.PoseLandmark.LEFT_WRIST.value].y]
+        angle = calc_angle(shoulder, elbow, wrist)
+        set_exercise.current_angle = angle
+        return elbow, angle
+
+    elif(exercise == 'bicep_curl'):
         shoulder = [landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER.value].x, landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER.value].y]
         elbow = [landmarks[mp_pose.PoseLandmark.LEFT_ELBOW.value].x, landmarks[mp_pose.PoseLandmark.LEFT_ELBOW.value].y]
         wrist = [landmarks[mp_pose.PoseLandmark.LEFT_WRIST.value].x, landmarks[mp_pose.PoseLandmark.LEFT_WRIST.value].y]
